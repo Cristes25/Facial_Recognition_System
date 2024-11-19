@@ -52,9 +52,9 @@ class MyThread(QThread):
         cap = cv2.VideoCapture(0)
         camera_detection = CameraDetection(cap)
         while cap.isOpened():
-            camera_detection.start_camera(cap)
             _, frame = cap.read()
             frame = self.cvimage_to_label(frame)
+            camera_detection.start_camera(cap)
             self.frame_signal.emit(frame)
 
     def cvimage_to_label(self, image):
