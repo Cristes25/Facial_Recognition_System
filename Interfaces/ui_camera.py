@@ -21,6 +21,7 @@ from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import QWidget
 import cv2
 import imutils
+from FaceRecognition.face_recognition import CameraDetection
 
 class Ui_Camera(object):
     def setupUi(self, Form):
@@ -48,9 +49,11 @@ class MyThread(QThread):
     frame_signal = Signal(QImage)
 
     def run(self):
-        self.cap = cv2.VideoCapture(0)
-        while self.cap.isOpened():
-            _, frame = self.cap.read()
+        cap = cv2.VideoCapture(0)
+        camera_detection = CameraDetection(cap)
+        while cap.isOpened():
+            camera_detection.start_camera(cap)
+            _, frame = cap.read()
             frame = self.cvimage_to_label(frame)
             self.frame_signal.emit(frame)
 

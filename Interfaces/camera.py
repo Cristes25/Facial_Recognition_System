@@ -5,20 +5,24 @@ from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QImage,QPixmap
 from PyQt5.QtCore import QThread,pyqtSignal as Signal,pyqtSlot as Slot
 import cv2,imutils
+from FaceRecognition.face_recognition import CameraDetection
+
 
 class MyThread(QThread):
     frame_signal = Signal(QImage)
 
     def run(self):
-        self.cap = cv2.VideoCapture(0)
-        while self.cap.isOpened():
-            _, frame = self.cap.read()
+        cap = cv2.VideoCapture(0)
+        camera_detection = CameraDetection(cap)
+        while cap.isOpened():
+            camera_detection.start_camera(cap)
+            _, frame = cap.read()
             frame = self.cvimage_to_label(frame)
             self.frame_signal.emit(frame)
 
     def cvimage_to_label(self, image):
         image = imutils.resize(image, width=640)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         image = QImage(
             image,
             image.shape[1],

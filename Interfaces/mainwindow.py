@@ -20,8 +20,4 @@ class MainWindow(QMainWindow):
         self.child_window = QWidgetCamera()
         self.child_window.show()
 
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    mainWindow = MainWindow()
-    mainWindow.show()
-    sys.exit(app.exec())
+
