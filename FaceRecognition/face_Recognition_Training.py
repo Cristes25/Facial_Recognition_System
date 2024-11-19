@@ -47,7 +47,7 @@ def train_face_recognizer(faces, labels):
         json.dump(recognizer_data, json_file)
     print("Model Trained and saved as 'trained_model'")
 
-def main():
+def trainer_main():
     #connection=get_db_connection()
     if connection is None:
         print("Database connection failed. Exiting...")
@@ -66,5 +66,3 @@ def main():
     print("Training complete!")
 
 
-if __name__ == "__main__":
-    main()

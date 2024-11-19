@@ -3,11 +3,18 @@ import cv2
 import e
 import numpy as np
 import json
+import os
 
 class CameraDetector:
+    def __init__(self, cap):
+        self.cap = cap
+        self.recognizer = None
+
     def load_recognizer (self):
         try:
-            with open('trained_model.json', 'r') as json_file:
+            script_dir = os.path.dirname(os.path.abspath(__file__))  # Needs absolute path to work.
+            file_path = os.path.join(script_dir, 'trained_model.json')
+            with open(file_path, 'r') as json_file:
                 recognizer_data = json.load(json_file)
 
             recognizer = cv2.face.LBPHFaceRecognizer_create()
@@ -16,7 +23,7 @@ class CameraDetector:
             recognizer.setGridX(recognizer_data["grid_x"])
             recognizer.setGridY(recognizer_data["grid_y"])
             recognizer.setThreshold(recognizer_data["threshold"])
-            recognizer.read("trained_model.yml") #Ensure compatibility if LBPH model is separately stored
+            # recognizer.read("trained_model.yml") #Ensure compatibility if LBPH model is separately stored
             return recognizer
         except FileNotFoundError:
             print("Error: Trainer file 'trained_model.json' not found.")
@@ -29,7 +36,7 @@ class CameraDetector:
             return None
     #Take Attendance Function
 
-    def detect_faces_from_camera(self, recognizer):
+    def detect_faces_from_camera(self, recognizer, cap):
         try:
             #OpenCV's pre-trained Haar Cascade Classifier for face detection
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -37,10 +44,10 @@ class CameraDetector:
                 print("Error: Failed to load Haar Cascade Classifier.")
                 return
             # Open the default camera
-            cap = cv2.VideoCapture(0) #0 is the default camera
-            if not cap.isOpened():
-                print("Error: Failed to open camera.")
-                return
+            # cap = cv2.VideoCapture(0) #0 is the default camera
+            # if not cap.isOpened():
+            #     print("Error: Failed to open camera.")
+            #     return
             while True:
                 ret, frame = cap.read()
                 if not ret:
@@ -81,25 +88,25 @@ class CameraDetector:
             print("Error", f"OpenCV error: {e}")
         except Exception as e:
             print("Error", f"Error during detection: {e}")
-            cap.release()
+            self.cap.release()
             cv2.destroyAllWindows()
     #Function to handle button click
-    def start_camera(self):
-        recognizer= load_recognizer()
+    def start_camera(self, camera):
+        recognizer= self.load_recognizer()
         if recognizer is None:
             return
 
         #Run face detection in a different Thread to avoid freezing
-        thread=threading.Thread(target=detect_faces_from_camera, args=(recognizer,))
+        thread=threading.Thread(target=self.detect_faces_from_camera, args=(recognizer,camera))
         thread.start()
 #MAIN
-def main():
-    print("Starting live face detection...")
-    start_camera()
+# def main():
+#     print("Starting live face detection...")
+#     self.start_camera()
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 
 
