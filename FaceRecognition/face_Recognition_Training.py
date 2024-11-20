@@ -8,7 +8,7 @@ connection = Connector()
 def get_training_data():
     global connection
     cursor=connection.mycursor
-    query= "SELECT * FROM student_images WHERE student_picture IS NOT NULL"
+    query= "SELECT * FROM student_images"
     connection.mycursor.execute(query)
     data=cursor.fetchall()
     faces=[]
@@ -46,6 +46,7 @@ def train_face_recognizer(faces, labels):
     with open("trained_model.json", "w") as json_file:
         json.dump(recognizer_data, json_file)
     print("Model Trained and saved as 'trained_model'")
+    return face_recognizer
 
 def trainer_main():
     #connection=get_db_connection()
@@ -61,8 +62,9 @@ def trainer_main():
         return
 
     print(f"Training with {len(faces)} images...")
-    train_face_recognizer(faces, labels)
+    recognizer = train_face_recognizer(faces, labels)
 
     print("Training complete!")
+    return recognizer
 
 

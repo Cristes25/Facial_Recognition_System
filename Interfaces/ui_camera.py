@@ -50,7 +50,7 @@ class MyThread(QThread):
     frame_signal = Signal(QImage)
 
     def run(self):
-        trainer_main()
+        #trainer_main()
         cap = cv2.VideoCapture(0)
         camera_detection = CameraDetector(cap)
         while cap.isOpened():

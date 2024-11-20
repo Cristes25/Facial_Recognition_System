@@ -4,26 +4,32 @@ import e
 import numpy as np
 import json
 import os
+from FaceRecognition.face_Recognition_Training import trainer_main
 
 class CameraDetector:
     def __init__(self, cap):
         self.cap = cap
         self.recognizer = None
 
-    def load_recognizer (self):
+    def load_recognizer(self, recognizer):
         try:
             script_dir = os.path.dirname(os.path.abspath(__file__))  # Needs absolute path to work.
             file_path = os.path.join(script_dir, 'trained_model.json')
             with open(file_path, 'r') as json_file:
                 recognizer_data = json.load(json_file)
 
-            recognizer = cv2.face.LBPHFaceRecognizer_create()
             recognizer.setRadius(recognizer_data["radius"])
             recognizer.setNeighbors(recognizer_data["neighbors"])
             recognizer.setGridX(recognizer_data["grid_x"])
             recognizer.setGridY(recognizer_data["grid_y"])
             recognizer.setThreshold(recognizer_data["threshold"])
             # recognizer.read("trained_model.yml") #Ensure compatibility if LBPH model is separately stored
+            # Check if recognizer was trained
+            # if not recognizer_data.get("faces") or not recognizer_data.get("labels"):
+            #     print("Error: No training data found. Re-training...")
+            #     trainer_main()
+            #     print("Training complete. Restart the application.")
+            #     return None
             return recognizer
         except FileNotFoundError:
             print("Error: Trainer file 'trained_model.json' not found.")
@@ -68,15 +74,17 @@ class CameraDetector:
                     face= gray[y:y+h, x:x+w]
                     #Recognize the face
                     label, confidence=recognizer.predict(face)
+                    print(confidence)
                     if confidence <100:
                         label_text= f"ID {label}, Conf: {round(confidence,2)}"
                         #record_attendance (label) #record attendance for recognized face
                     else:
                         label_text= "Unknown"
+
                     cv2.putText(frame, label_text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
                 cv2.imshow('Face Detection', frame)
 
-                #Press 'q' to quit
+                #Press 'q' to quit.
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
@@ -92,7 +100,7 @@ class CameraDetector:
             cv2.destroyAllWindows()
     #Function to handle button click
     def start_camera(self, camera):
-        recognizer= self.load_recognizer()
+        recognizer= trainer_main()
         if recognizer is None:
             return
 
