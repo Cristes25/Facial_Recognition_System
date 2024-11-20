@@ -14,6 +14,7 @@ class CameraDetector:
         self.cap = cap
         self.recognizer = None
         self.frame_processed_callback = frame_processed_callback
+        self.label_map = None
 
     def load_recognizer(self, recognizer):
         try:
@@ -80,13 +81,18 @@ class CameraDetector:
                     face= gray[y:y+h, x:x+w]
                     #Recognize the face
                     label, confidence=recognizer.predict(face)
-                    if confidence <100:
-                        label_text= f"ID {label}, Conf: {round(confidence,2)}"
+                    if confidence <= 100:
+                        reverse_label_map = {v: k for k, v in self.label_map.items()}
+                        predicted_name = reverse_label_map[label]
+                        label_text= predicted_name
+                        confidence_label = f"Conf. {round(confidence, 2)}"
                         #record_attendance (label) #record attendance for recognized face
                     else:
                         label_text= "Unknown"
+                        confidence_label = ""
 
-                    cv2.putText(frame, label_text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
+                    cv2.putText(frame, label_text, (x, y-30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
+                    cv2.putText(frame, confidence_label, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
 
                 #Press 'q' to quit.
 
@@ -109,7 +115,7 @@ class CameraDetector:
     #Function to handle button click
     def start_camera(self, camera):
         # self.frame_processed_callback = frame_processed_callback
-        recognizer= trainer_main()
+        recognizer, self.label_map= trainer_main()
         if recognizer is None:
             return
 
