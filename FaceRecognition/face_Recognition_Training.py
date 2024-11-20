@@ -15,6 +15,7 @@ def get_training_data():
     labels=[]
 
     for row in data:
+        # Check the correct id is being called here
         student_id=row[1]
         picture_blob=row[3]
 

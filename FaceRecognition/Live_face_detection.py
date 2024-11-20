@@ -4,12 +4,16 @@ import e
 import numpy as np
 import json
 import os
+
+from PySide6.QtGui import QImage
+
 from FaceRecognition.face_Recognition_Training import trainer_main
 
 class CameraDetector:
-    def __init__(self, cap):
+    def __init__(self, cap, frame_processed_callback):
         self.cap = cap
         self.recognizer = None
+        self.frame_processed_callback = frame_processed_callback
 
     def load_recognizer(self, recognizer):
         try:
@@ -23,13 +27,7 @@ class CameraDetector:
             recognizer.setGridX(recognizer_data["grid_x"])
             recognizer.setGridY(recognizer_data["grid_y"])
             recognizer.setThreshold(recognizer_data["threshold"])
-            # recognizer.read("trained_model.yml") #Ensure compatibility if LBPH model is separately stored
-            # Check if recognizer was trained
-            # if not recognizer_data.get("faces") or not recognizer_data.get("labels"):
-            #     print("Error: No training data found. Re-training...")
-            #     trainer_main()
-            #     print("Training complete. Restart the application.")
-            #     return None
+
             return recognizer
         except FileNotFoundError:
             print("Error: Trainer file 'trained_model.json' not found.")
@@ -41,6 +39,14 @@ class CameraDetector:
             print(f"Error loading recognizer: {e}")
             return None
     #Take Attendance Function
+
+    def convert_to_frame(self, frame):
+        rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgb_image.shape
+        bytes_per_line = ch * w
+        qt_image = QImage(rgb_image.data, w, h, bytes_per_line, QImage.Format_RGB888)
+        return qt_image
+
 
     def detect_faces_from_camera(self, recognizer, cap):
         try:
@@ -65,8 +71,8 @@ class CameraDetector:
                 #Detect faces in the frame
                 faces = face_cascade.detectMultiScale(gray, 1.1,4)#Detect faces
 
-                if len(faces)==0:
-                    print("No faces detected.")
+                # if len(faces)==0:
+                #     print("No faces detected.")
 
                 for (x,y,w,h) in faces:
                     #Rectangle around the face
@@ -74,7 +80,6 @@ class CameraDetector:
                     face= gray[y:y+h, x:x+w]
                     #Recognize the face
                     label, confidence=recognizer.predict(face)
-                    print(confidence)
                     if confidence <100:
                         label_text= f"ID {label}, Conf: {round(confidence,2)}"
                         #record_attendance (label) #record attendance for recognized face
@@ -82,15 +87,17 @@ class CameraDetector:
                         label_text= "Unknown"
 
                     cv2.putText(frame, label_text, (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
-                cv2.imshow('Face Detection', frame)
 
                 #Press 'q' to quit.
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
                     #release resources
+                qt_image = self.convert_to_frame(frame)
+                self.frame_processed_callback(qt_image)
             cap.release()
             cv2.destroyAllWindows()
+
 
         except cv2.error as e:
             print("Error", f"OpenCV error: {e}")
@@ -98,23 +105,18 @@ class CameraDetector:
             print("Error", f"Error during detection: {e}")
             self.cap.release()
             cv2.destroyAllWindows()
+
     #Function to handle button click
     def start_camera(self, camera):
+        # self.frame_processed_callback = frame_processed_callback
         recognizer= trainer_main()
         if recognizer is None:
             return
 
         #Run face detection in a different Thread to avoid freezing
         thread=threading.Thread(target=self.detect_faces_from_camera, args=(recognizer,camera))
+        thread.daemon = True
         thread.start()
-#MAIN
-# def main():
-#     print("Starting live face detection...")
-#     self.start_camera()
-
-
-# if __name__ == "__main__":
-#     main()
 
 
 

@@ -49,35 +49,31 @@ class Ui_Camera(object):
 class MyThread(QThread):
     frame_signal = Signal(QImage)
 
+    def __init__(self, camera_index=0, parent=None):
+        super().__init__(parent)
+        self.running = True
+
     def run(self):
         #trainer_main()
         cap = cv2.VideoCapture(0)
-        camera_detection = CameraDetector(cap)
-        while cap.isOpened():
-            _, frame = cap.read()
-            frame = self.cvimage_to_label(frame)
-            camera_detection.start_camera(cap)
-            self.frame_signal.emit(frame)
 
-    def cvimage_to_label(self, image):
-        image = imutils.resize(image, width=640)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = QImage(
-            image,
-            image.shape[1],
-            image.shape[0],
-            QImage.Format_RGB888
-        )
-        return image
+        def process_frame_callback(qt_image):
+            self.frame_signal.emit(qt_image)
+
+        camera_detection = CameraDetector(cap, process_frame_callback)
+        if cap.isOpened():
+            camera_detection.start_camera(cap)
+            pass
+
 
 # Camera widget class
 class QWidgetCamera(QWidget):
     def __init__(self):
         super().__init__()
         self.ui = Ui_Camera()
-        self.ui.setupUi(self) 
+        self.ui.setupUi(self)
         self.camera_thread = MyThread()
-        self.camera_thread.frame_signal.connect(self.setImage) 
+        self.camera_thread.frame_signal.connect(self.setImage)
 
     def open_camera(self):
         self.camera_thread.start()
