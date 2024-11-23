@@ -1,4 +1,6 @@
 import threading
+from tkinter import Label
+
 import cv2
 import e
 import numpy as np
@@ -6,6 +8,7 @@ import json
 import os
 
 from PySide6.QtGui import QImage
+from sklearn.preprocessing import LabelEncoder
 
 from FaceRecognition.face_Recognition_Training import trainer_main
 
@@ -49,8 +52,9 @@ class CameraDetector:
         return qt_image
 
 
-    def detect_faces_from_camera(self, recognizer, cap):
+    def detect_faces_from_camera(self, cap, model, labels):
         try:
+            label_encoder = LabelEncoder()
             #OpenCV's pre-trained Haar Cascade Classifier for face detection
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             if face_cascade.empty():
@@ -79,20 +83,35 @@ class CameraDetector:
                     #Rectangle around the face
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
                     face= gray[y:y+h, x:x+w]
-                    #Recognize the face
-                    label, confidence=recognizer.predict(face)
-                    if confidence <= 100:
-                        reverse_label_map = {v: k for k, v in self.label_map.items()}
-                        predicted_name = reverse_label_map[label]
-                        label_text= predicted_name
-                        confidence_label = f"Conf. {round(confidence, 2)}"
-                        #record_attendance (label) #record attendance for recognized face
-                    else:
-                        label_text= "Unknown"
-                        confidence_label = ""
+                    #Normalize face for comparision
+                    face_resized = cv2.resize(face, (224, 224)) #Change it so its the size of the faces in the model
+                    face_normalized = face_resized / 255.0
+                    face_input = np.expand_dims(face_normalized, axis=0)
+                    face_input = np.expand_dims(face_input, axis=-1)
 
-                    cv2.putText(frame, label_text, (x, y-30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
-                    cv2.putText(frame, confidence_label, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
+                    # Call the prediction with the model
+                    prediction = model.predict(face_input)
+                    pred_id = labels[np.argmax(prediction)]
+                    print(f"prediction shape {prediction.shape}"
+                          f"pred_id = {pred_id}"
+                          f"predicted_class {np.argmax(prediction)}")
+                    print(f"labels {labels}")
+                    # print(f"name: {pred_id}")
+
+                    # # Get the labels for the names
+                    label_encoder.fit(labels)
+                    predicted_numeric_label = pred_id  # Example: the model predicts numeric label 1
+                    predicted_label = str(label_encoder.inverse_transform([predicted_numeric_label])[0])
+                    # print(str(predicted_label))
+
+                    #Recognize the face
+
+                    # else:
+                    #     label_text= "Unknown"
+                    #     confidence_label = ""
+
+                    cv2.putText(frame, predicted_label, (x, y-30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
+                    # cv2.putText(frame, confidence, (x, y-5), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255, 0), 2)
 
                 #Press 'q' to quit.
 
@@ -115,12 +134,12 @@ class CameraDetector:
     #Function to handle button click
     def start_camera(self, camera):
         # self.frame_processed_callback = frame_processed_callback
-        recognizer, self.label_map= trainer_main()
-        if recognizer is None:
+        model, labels =trainer_main()
+        if model is None:
             return
 
         #Run face detection in a different Thread to avoid freezing
-        thread=threading.Thread(target=self.detect_faces_from_camera, args=(recognizer,camera))
+        thread=threading.Thread(target=self.detect_faces_from_camera, args=(camera,model, labels))
         thread.daemon = True
         thread.start()
 
