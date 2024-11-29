@@ -104,7 +104,7 @@ class MainWindow(QMainWindow):
     #         listaRegiones = self.dtu.listaRegiones()
     #         self.ui.cbox_cod_region.addItem("Region*")
     #         for region in listaRegiones:
-    #             self.ui.cbox_cod_region.addItem(str(region._region_name), str(region._region_id))
+    #             self.ui.cbox_cod_region.addItem(str(region._region_name), str(region._region_id)) #Remember to copy the code that makes it so that only the name is seen
     #     except Exception as e:
     #         print(e)
 

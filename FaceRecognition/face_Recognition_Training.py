@@ -15,7 +15,6 @@ from FaceRecognition.image_conversion import get_faces_from_db
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-
 def get_training_data():
     faces_aumented, labels = get_faces_from_db()
     print(faces_aumented.shape)
