@@ -21,7 +21,6 @@ from PySide6.QtCore import QThread, Signal, Slot
 import cv2
 import numpy as np
 from FaceRecognition.Live_face_detection import CameraDetector
-from FaceRecognition.face_Recognition_Training import trainer_main
 
 
 class Ui_Camera(object):
@@ -56,6 +55,7 @@ class Ui_Camera(object):
 class MyThread(QThread):
     frame_signal = Signal(QImage)
     photo_captured_signal = Signal(QImage)
+    faces_signal = Signal(list)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -75,17 +75,18 @@ class MyThread(QThread):
     def take_photo(self):
         if self.camera_detector:
             frame, faces = self.camera_detector.stop_and_capture()
+            self.faces_signal.emit(faces)
             if frame is not None:
                 self.photo_captured_signal.emit(frame)
             self.camera_detector.running = False  # Ensure threads stop
             self.camera_detector = None
-            return faces
 
     def stop(self):
         self.running = False
         if self.camera_detector:
             self.camera_detector.running = False  # Stop the camera detector threads
         self.wait()
+
 
 class QWidgetCamera(QWidget):
     def __init__(self):
@@ -94,8 +95,8 @@ class QWidgetCamera(QWidget):
         self.ui.setupUi(self)
         self.camera_thread = MyThread()
         self.camera_thread.frame_signal.connect(self.setImage)
-        # self.camera_thread.photo_captured_signal.connect(self.showFrozenImage)
         self.ui.take_photo_btn.clicked.connect(self.take_photo)
+
 
     def open_camera(self):
         self.camera_thread.start()
@@ -103,7 +104,7 @@ class QWidgetCamera(QWidget):
     def take_photo(self):
         if self.camera_thread:
             self.camera_thread.take_photo()
-
+            self.destroy()
 
     @Slot(QImage)
     def setImage(self, image):

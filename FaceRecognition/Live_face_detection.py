@@ -29,10 +29,10 @@ class CameraDetector:
         self.emit_interval = 0.05
         self.running = True
         self.encoder = self.load_encoder()
-        self.known_face_hashes = {}
         # self.face_queue = Queue(maxsize=30)
         self.last_frame = None
         self.detected_faces = []
+        trainer_main()
         self.model = tf.keras.models.load_model('face_recognition_model.keras')
 
 
@@ -41,9 +41,10 @@ class CameraDetector:
         cv2.destroyAllWindows()
         self.running = False
         if self.last_frame is not None:
-            last_frame = self.qimage_to_np_array(self.last_frame)
+            # last_frame = self.qimage_to_np_array(self.last_frame)
+            self.detect_all_faces()
             faces = self.predict_faces()
-            return last_frame, faces  # Return the last frame
+            return self.last_frame, faces  # Return the last frame
         return None
 
     def load_encoder(self, file_name='label_encoder.pkl'):
@@ -80,6 +81,22 @@ class CameraDetector:
         '''Create a unique hash for each face image based on its content.'''
         image_hash = hashlib.md5(face_image.tobytes()).hexdigest()
         return image_hash
+
+    def show_camera(self):
+        while self.running:
+            try:
+                ret, frame = self.cap.read()
+                qt_image = self.convert_to_frame(frame)
+                self.frame_processed_callback(qt_image)
+                self.last_frame = frame
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    self.running = False
+                    self.cap.release()
+                    cv2.destroyAllWindows()
+
+            except cv2.error as e:
+                print("Error", f"OpenCV error: {e}")
+
 
     def detect_all_faces_in_livemode(self, cap):
         '''Detect faces in the video stream and add them to the queue.'''
@@ -132,45 +149,41 @@ class CameraDetector:
             cv2.destroyAllWindows()
 
     def detect_all_faces(self):
-        while self.running:
-            try:
-                face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-                ret, frame = self.cap.read()
-                if face_cascade.empty():
-                    print("Error: Failed to load Haar Cascade Classifier.")
-                    return
-                # frame = self.qimage_to_np_array(frame)
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                faces = face_cascade.detectMultiScale(gray, 1.1, 4, minSize=(150, 50), maxSize=(350, 350))
-                for (x, y, w, h) in faces:
-                    cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-                    face = gray[y:y + h, x:x + w]
-                    # Normalize and resize face for the model
-                    face_resized = cv2.resize(face, (240, 240))
-                    face_normalized = face_resized / 255.0
-                    face_input = np.expand_dims(face_normalized, axis=0)
-                    face_input = np.expand_dims(face_input, axis=-1)
-                    self.detected_faces.append(face_input)
-                qt_image = self.convert_to_frame(frame)
-                self.last_frame = qt_image
-                self.frame_processed_callback(qt_image)
+        try:
+            face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+            if face_cascade.empty():
+                print("Error: Failed to load Haar Cascade Classifier.")
+                return
+            # frame = self.qimage_to_np_array(frame)
+            gray = cv2.cvtColor(self.last_frame, cv2.COLOR_BGR2GRAY)
+            faces = face_cascade.detectMultiScale(gray, 1.1, 4, minSize=(150, 50), maxSize=(350, 350))
+            for (x, y, w, h) in faces:
+                cv2.rectangle(self.last_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+                face = gray[y:y + h, x:x + w]
+                # Normalize and resize face for the model
+                face_resized = cv2.resize(face, (240, 240))
+                face_normalized = face_resized / 255.0
+                face_input = np.expand_dims(face_normalized, axis=0)
+                face_input = np.expand_dims(face_input, axis=-1)
+                self.detected_faces.append(face_input)
 
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.running = False
-                    self.cap.release()
-                    cv2.destroyAllWindows()
-
-            except cv2.error as e:
-                print("Error", f"OpenCV error: {e}")
+        except Exception as e:
+            print("Error", f"Detecting error: {e}")
 
 
     def predict_faces(self):
         present_students = []
+        print("classes", self.encoder.classes_)
         for face in self.detected_faces:
             prediction = self.model.predict(face)
-            predicted_label = str(np.argmax(prediction))
-            present_students.append(predicted_label)
-        return present_students
+            predicted_label = np.argmax(prediction)
+            confidence = round(float(np.max(prediction)), 2)
+            if confidence >= 0.03:
+
+                present_students.append(predicted_label)
+
+        original_ids = self.encoder.inverse_transform(present_students)
+        return original_ids
 
 
     def predict_faces_in_livemode(self, model):
@@ -212,14 +225,14 @@ class CameraDetector:
         if self.model is None:
             return
         # Run face detection and prediction in separate threads
-        detection = threading.Thread(target=self.detect_all_faces, args=())
-        detection.daemon = True
+        camera_updating = threading.Thread(target=self.show_camera, args=())
+        camera_updating.daemon = True
 
         # prediction = threading.Thread(target=self.predict_faces, args=(model,))
         # prediction.daemon = True
 
-        detection.start()
-        time.sleep(1)  # Give some time for camera to initialize
+        camera_updating.start()
+        # time.sleep(1)  # Give some time for camera to initialize
         # prediction.start()
         #
         # detection.join()

@@ -18,7 +18,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
     QMainWindow, QMenuBar, QPushButton, QSizePolicy,
     QStatusBar, QWidget)
+
+from database_connection import Connector
 from ui_camera import QWidgetCamera
+# from Attendance_Report_Generation import
 import sys
 
 class Ui_MainWindow(object):
@@ -85,28 +88,42 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.takeAttendance_btn.clicked.connect(self.open_widget)
+        self.ui.takeAttendance_btn.clicked.connect(self.open_attendance)
+        self.faces = []
+        self.connection = Connector()
+        self.fill_Combobox()
 
     def show_main_window(self):
         # Show the main window again after the child window is closed
         self.show()
+        self.ui.report_btn.setEnabled(False)
 
-    def open_widget(self):
+    def open_attendance(self):
         self.hide()
         self.child_window = QWidgetCamera()
         self.child_window.show()
         self.child_window.open_camera()
-        self.child_window.destroyed.connect(self.show_main_window)
-        self.ui.report_btn.setEnabled(True)
+        self.child_window.camera_thread.faces_signal.connect(lambda data: self.store_faces(data))
 
-    # def cargarCombobox(self):
-    #     try:
-    #         listaRegiones = self.dtu.listaRegiones()
-    #         self.ui.cbox_cod_region.addItem("Region*")
-    #         for region in listaRegiones:
-    #             self.ui.cbox_cod_region.addItem(str(region._region_name), str(region._region_id)) #Remember to copy the code that makes it so that only the name is seen
-    #     except Exception as e:
-    #         print(e)
+    def store_faces(self, faces):
+        self.show()
+        self.ui.report_btn.setEnabled(True)
+        # TODO pass faces to report generator
+        # TODO open report generator
+        self.faces = [] # Clean it in case the program runs multiple times
+        for id in faces:
+            self.faces.append(int(id))
+
+    def fill_Combobox(self):
+        try:
+            data = self.connection.get_course_group()
+            for row in data:
+                self.ui.comboBox.addItem(f"Group {row[0]} | {row[1]} {row[2]}")
+        except Exception as e:
+            print(e)
+
+    def generate_report(self):
+       return
 
 
 if __name__ == "__main__":
