@@ -30,3 +30,18 @@ class Connector:
         data = cursor.fetchall()
         return data
 
+    def get_schedule_id(self, data):
+        query = """
+SELECT distinct s.schedule_id, cs.class_group, c.course_code, c.course_name
+from course_enrollment cs inner join courses c on c.course_code = cs.course_code
+inner join schedules s on s.course_code = c.course_code
+inner join days_of_week d ON s.day_id = d.day_id
+WHERE  d.day_name = 'Monday'
+  AND s.start_time <= %s
+  AND s.end_time > %s;
+        """
+
+        # Execute the query
+        self.mycursor.execute(query, data)
+        result = self.mycursor.fetchall()
+        return result

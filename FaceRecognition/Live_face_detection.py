@@ -99,7 +99,7 @@ class CameraDetector:
 
 
     def detect_all_faces_in_livemode(self, cap):
-        '''Detect faces in the video stream and add them to the queue.'''
+        '''Detect students in the video stream and add them to the queue.'''
         try:
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             if face_cascade.empty():
@@ -187,8 +187,8 @@ class CameraDetector:
 
 
     def predict_faces_in_livemode(self, model):
-        '''Process the faces in the queue and make predictions.
-        Uncomment self.queue, for now this is useless, since all it is doing is detecting faces in a photo,
+        '''Process the students in the queue and make predictions.
+        Uncomment self.queue, for now this is useless, since all it is doing is detecting students in a photo,
         this is more for real time detection'''
         while self.running:
             try:

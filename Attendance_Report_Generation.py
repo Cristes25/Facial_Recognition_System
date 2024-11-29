@@ -125,10 +125,9 @@ class Attendance:
         try:
             query="""
             INSERT INTO attendance (schedule_id,student_id,attendance_date, status)
-            VALUES ({}, {}, {}, {})
-            """.format(schedule_id, student_id, attendance_date, status)
+            VALUES (%s, %s, %s, %s)
+            """
             #Data to be inserted
-
             data=(schedule_id, student_id, attendance_date, status)
             self.connector.mycursor.execute(query, data)
 
