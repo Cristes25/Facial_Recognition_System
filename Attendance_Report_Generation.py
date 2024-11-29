@@ -43,7 +43,7 @@ class  AttendanceReportGenerator:
 
     def send_email(self, professor_email, subject, body):
         """Send an email with the attendance report."""
-        sender_email = 'jihcK@gmail.com'
+        sender_email = 'jihck23@gmail.com'
         sender_password = 'PythonFall24'  #Creo que no es necesario
 
         msg = MIMEMultipart()
@@ -76,7 +76,7 @@ class  AttendanceReportGenerator:
                 print(row)
                 report_content += f"{row[0]} | {row[1]} | {row[2]} | {row[3]} \n"
 
-            professor_email = attendance_data[0][5]  # Change to retrieve the email from the database
+            professor_email = ("andrea130405@gmail.com")  # Change to retrieve the email from the database
 
             self.send_email(professor_email, f"Attendance Report for {course_code} on {date}", report_content)
         else:
