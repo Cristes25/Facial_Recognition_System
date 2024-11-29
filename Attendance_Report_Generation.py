@@ -43,8 +43,8 @@ class  AttendanceReportGenerator:
 
     def send_email(self, professor_email, subject, body):
         """Send an email with the attendance report."""
-        sender_email = 'your_email@example.com'
-        sender_password = 'your_password'  #Creo que no es necesario
+        sender_email = 'jihcK@gmail.com'
+        sender_password = 'PythonFall24'  #Creo que no es necesario
 
         msg = MIMEMultipart()
         msg['From'] = sender_email
@@ -69,11 +69,12 @@ class  AttendanceReportGenerator:
 
         if attendance_data:
             report_content = f"Attendance Report for Course: {course_code} on {date}\n\n"
-            report_content += "Student Firstname | Student Lastname | Course Name | Attendance Date | Status\n"
+            report_content += "Student name | Course Name | Attendance Date | Status\n"
             report_content += "-" * 80 + "\n"
 
             for row in attendance_data:
-                report_content += f"{row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]}\n"
+                print(row)
+                report_content += f"{row[0]} | {row[1]} | {row[2]} | {row[3]} \n"
 
             professor_email = attendance_data[0][5]  # Change to retrieve the email from the database
 

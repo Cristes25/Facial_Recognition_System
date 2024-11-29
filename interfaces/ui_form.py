@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
     QMainWindow, QMenuBar, QPushButton, QSizePolicy,
     QStatusBar, QWidget)
 
-from Attendance_Report_Generation import Attendance
+from Attendance_Report_Generation import Attendance, AttendanceReportGenerator
 from database_connection import Connector
 from ui_camera import QWidgetCamera
 # from Attendance_Report_Generation import
@@ -125,17 +125,21 @@ class MainWindow(QMainWindow):
             data = (current_day, current_time)
             current_classes = self.connection.get_schedule_id(data)
             for row in current_classes:
-                self.ui.comboBox.addItem(f"Group {row[1]} | {row[2]} {row[3]}", row[0])
+                self.ui.comboBox.addItem(f"Group {row[1]} | {row[2]} {row[3]}", (row[0], row[2]))
         except Exception as e:
             print(e)
 
     def generate_report(self):
         attendance = Attendance()
         date = datetime.date.today()
-        schedule_id = self.ui.comboBox.currentData()
+        data = self.ui.comboBox.currentData()
+        schedule_id = data[0]
+        course_id = data[1]
         for student in self.students:
             attendance.insert_attendance(student, schedule_id,  date, 'Present')
         self.ui.comboBox.setEditable(True)
+        attendance_report = AttendanceReportGenerator()
+        attendance_report.generate_report_and_send_email(course_code=course_id, date=str(date))
         return
 
 
