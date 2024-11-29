@@ -1,3 +1,4 @@
+import json
 import mysql
 import smtplib
 from email.mime.text import MIMEText
@@ -11,6 +12,7 @@ from database_connection import Connector
 class  AttendanceReportGenerator:
     def __init__(self):
         self.connector = Connector()
+
 
 #Fetch data from view
     def fetch_course_schedule(self, professor_id, course_code,course_name, day_name):
@@ -43,8 +45,19 @@ class  AttendanceReportGenerator:
 
     def send_email(self, professor_email, subject, body):
         """Send an email with the attendance report."""
-        sender_email = 'your_email@example.com'
-        sender_password = 'your_password'  #Creo que no es necesario
+        #sender_email = 'your_email@example.com'
+        #sender_password = 'your_password'  #Creo que no es necesario
+
+        # Load credentials from the JSON file
+        credentials_file = "credentials.json"
+        try:
+            with open(credentials_file, "r") as file:
+                credentials = json.load(file)
+                sender_email = credentials["sender_email"]
+                sender_password = credentials["sender_password"]
+        except Exception as e:
+            print(f"Error loading credentials: {e}")
+            return
 
         msg = MIMEMultipart()
         msg['From'] = sender_email
