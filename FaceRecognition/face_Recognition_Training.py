@@ -15,10 +15,9 @@ from FaceRecognition.image_conversion import get_faces_from_db
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
-
 def get_training_data():
     faces_aumented, labels = get_faces_from_db()
-    print(faces_aumented.shape)
+    print(labels)
     #The model uses numbers, so its necessary to encode the labels. There is a function label_encoder.inverse_transform that
     # decodes into the string again, to use the name. Must be the same encoder, thats why this one is sent around functions so much
     label_encoder = LabelEncoder()
@@ -64,10 +63,10 @@ def create_model():
         tf.keras.layers.GlobalAveragePooling2D(),
         tf.keras.layers.Dense(256, activation='relu'),
         tf.keras.layers.Dropout(0.4),
-        tf.keras.layers.Dense(len(label_encoder.classes_), activation='softmax')  # Corrected this line
+        tf.keras.layers.Dense(len(label_encoder.classes_), activation='softmax')
     ])
 
-    model.compile(optimizer=tf.keras.optimizers.AdamW(learning_rate=0.001), # Se cambio el optimizer, anteriormente era ADAM
+    model.compile(optimizer=tf.keras.optimizers.AdamW(learning_rate=0.001),
                   loss='categorical_crossentropy',
                   metrics=['accuracy'])
     return model
