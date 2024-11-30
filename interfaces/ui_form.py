@@ -120,9 +120,9 @@ class MainWindow(QMainWindow):
         try:
             # current_day = datetime.datetime.now().strftime("%A")
             # current_time = datetime.datetime.now().strftime("%H:%M:%S")
-            current_day = 'Monday'
-            current_time = '09:14:00'
-            data = (current_day, current_time)
+            current_day = 'Tuesday'
+            current_time = '13:00:20'
+            data = (current_day, current_time, current_time)
             current_classes = self.connection.get_schedule_id(data)
             for row in current_classes:
                 self.ui.comboBox.addItem(f"Group {row[1]} | {row[2]} {row[3]}", (row[0], row[2]))

@@ -4,7 +4,7 @@ class Connector:
 
     def __init__(self):
         self.connection_info = mysql.connector.connect(user = 'root',
-                                         password= 'c!rist!ana25@',
+                                         password= 'A12345%z',
                                          host= 'localhost',
                                          database= 'university_attendance',
                                          port= '3306')
@@ -36,7 +36,7 @@ SELECT distinct s.schedule_id, cs.class_group, c.course_code, c.course_name
 from course_enrollment cs inner join courses c on c.course_code = cs.course_code
 inner join schedules s on s.course_code = c.course_code
 inner join days_of_week d ON s.day_id = d.day_id
-WHERE  d.day_name = 'Monday'
+WHERE  d.day_name = %s
   AND s.start_time <= %s
   AND s.end_time > %s;
         """

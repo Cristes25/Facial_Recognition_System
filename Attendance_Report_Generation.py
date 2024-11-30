@@ -23,8 +23,10 @@ class  AttendanceReportGenerator:
         """
                 Get Google API credentials directly from the credentials.json file.
                 """
+        path = os.getcwd()
+
         flow = InstalledAppFlow.from_client_secrets_file(
-            'C:\\Users\\crist\\PycharmProjects\\Facial_Recognition_System\\credentials2.json', self.SCOPES
+            'C:\\Users\\PC\\OneDrive - ITEDU\\Python\\project_final\\credentials2.json', self.SCOPES
         )
         creds = flow.run_local_server(port=8080)
         return creds
