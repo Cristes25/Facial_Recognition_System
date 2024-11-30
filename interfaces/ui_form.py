@@ -19,10 +19,12 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QHBoxLayout, QLabel,
     QMainWindow, QMenuBar, QPushButton, QSizePolicy,
     QStatusBar, QWidget)
 
+from Attendance_Report_Generation import Attendance, AttendanceReportGenerator
 from database_connection import Connector
 from ui_camera import QWidgetCamera
 # from Attendance_Report_Generation import
 import sys
+import datetime
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -89,7 +91,8 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.ui.takeAttendance_btn.clicked.connect(self.open_attendance)
-        self.faces = []
+        self.ui.report_btn.clicked.connect(self.generate_report)
+        self.students = []
         self.connection = Connector()
         self.fill_Combobox()
 
@@ -106,24 +109,38 @@ class MainWindow(QMainWindow):
         self.child_window.camera_thread.faces_signal.connect(lambda data: self.store_faces(data))
 
     def store_faces(self, faces):
+        self.ui.comboBox.setEditable(False)
         self.show()
         self.ui.report_btn.setEnabled(True)
-        # TODO pass faces to report generator
-        # TODO open report generator
-        self.faces = [] # Clean it in case the program runs multiple times
+        self.students = [] # Clean it in case the program runs multiple times
         for id in faces:
-            self.faces.append(int(id))
+            self.students.append(int(id))
 
     def fill_Combobox(self):
         try:
-            data = self.connection.get_course_group()
-            for row in data:
-                self.ui.comboBox.addItem(f"Group {row[0]} | {row[1]} {row[2]}")
+            # current_day = datetime.datetime.now().strftime("%A")
+            # current_time = datetime.datetime.now().strftime("%H:%M:%S")
+            current_day = 'Monday'
+            current_time = '09:14:00'
+            data = (current_day, current_time)
+            current_classes = self.connection.get_schedule_id(data)
+            for row in current_classes:
+                self.ui.comboBox.addItem(f"Group {row[1]} | {row[2]} {row[3]}", (row[0], row[2]))
         except Exception as e:
             print(e)
 
     def generate_report(self):
-       return
+        attendance = Attendance()
+        date = datetime.date.today()
+        data = self.ui.comboBox.currentData()
+        schedule_id = data[0]
+        course_id = data[1]
+        for student in self.students:
+            attendance.insert_attendance(student, schedule_id,  date, 'Present')
+        self.ui.comboBox.setEditable(True)
+        attendance_report = AttendanceReportGenerator()
+        attendance_report.generate_report_and_send_email(course_code=course_id, date=str(date))
+        return
 
 
 if __name__ == "__main__":

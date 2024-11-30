@@ -1,9 +1,3 @@
-from cProfile import label
-
-import cv2
-import numpy as np
-import json
-#New imports
 import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder
 from tensorflow.keras import layers, models

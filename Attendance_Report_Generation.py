@@ -1,4 +1,3 @@
-import json
 import mysql
 import smtplib
 from email.mime.text import MIMEText
@@ -12,7 +11,6 @@ from database_connection import Connector
 class  AttendanceReportGenerator:
     def __init__(self):
         self.connector = Connector()
-
 
 #Fetch data from view
     def fetch_course_schedule(self, professor_id, course_code,course_name, day_name):
@@ -45,19 +43,8 @@ class  AttendanceReportGenerator:
 
     def send_email(self, professor_email, subject, body):
         """Send an email with the attendance report."""
-        #sender_email = 'your_email@example.com'
-        #sender_password = 'your_password'  #Creo que no es necesario
-
-        # Load credentials from the JSON file
-        credentials_file = "credentials.json"
-        try:
-            with open(credentials_file, "r") as file:
-                credentials = json.load(file)
-                sender_email = credentials["sender_email"]
-                sender_password = credentials["sender_password"]
-        except Exception as e:
-            print(f"Error loading credentials: {e}")
-            return
+        sender_email = 'jihck23@gmail.com'
+        sender_password = 'PythonFall24'  #Creo que no es necesario
 
         msg = MIMEMultipart()
         msg['From'] = sender_email
@@ -82,13 +69,14 @@ class  AttendanceReportGenerator:
 
         if attendance_data:
             report_content = f"Attendance Report for Course: {course_code} on {date}\n\n"
-            report_content += "Student Firstname | Student Lastname | Course Name | Attendance Date | Status\n"
+            report_content += "Student name | Course Name | Attendance Date | Status\n"
             report_content += "-" * 80 + "\n"
 
             for row in attendance_data:
-                report_content += f"{row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]}\n"
+                print(row)
+                report_content += f"{row[0]} | {row[1]} | {row[2]} | {row[3]} \n"
 
-            professor_email = attendance_data[0][5]  # Change to retrieve the email from the database
+            professor_email = ("andrea130405@gmail.com")  # Change to retrieve the email from the database
 
             self.send_email(professor_email, f"Attendance Report for {course_code} on {date}", report_content)
         else:
@@ -138,10 +126,9 @@ class Attendance:
         try:
             query="""
             INSERT INTO attendance (schedule_id,student_id,attendance_date, status)
-            VALUES ({}, {}, {}, {})
-            """.format(schedule_id, student_id, attendance_date, status)
+            VALUES (%s, %s, %s, %s)
+            """
             #Data to be inserted
-
             data=(schedule_id, student_id, attendance_date, status)
             self.connector.mycursor.execute(query, data)
 
