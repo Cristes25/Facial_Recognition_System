@@ -1,3 +1,5 @@
+import base64
+
 import mysql
 import smtplib
 from email.mime.text import MIMEText
@@ -5,7 +7,12 @@ from email.mime.multipart import MIMEMultipart
 from datetime import datetime
 
 from tensorflow.compiler.tf2xla.python.xla import select
-
+import os
+import pickle
+from google.auth.transport.requests import Request
+from google_auth_oauthlib.flow import InstalledAppFlow
+from google.auth import load_credentials_from_file
+from googleapiclient.discovery import build
 from database_connection import Connector
 
 class  AttendanceReportGenerator:
@@ -40,10 +47,10 @@ class  AttendanceReportGenerator:
         """
         self.connector.mycursor.execute(query, (course_code, date))
         return self.connector.mycursor.fetchall()
-
+    """
     def send_email(self, professor_email, subject, body):
-        """Send an email with the attendance report."""
-        sender_email = 'jihck23@gmail.com'
+        Send an email with the attendance report.
+        sender_email = 'jihcka@gmail.com'
         sender_password = 'PythonFall24'  #Creo que no es necesario
 
         msg = MIMEMultipart()
@@ -62,6 +69,48 @@ class  AttendanceReportGenerator:
             print(f"Report sent to {professor_email}")
         except Exception as e:
             print(f"Error sending email: {e}")
+"""
+    def send_email(self, professor_email, subject, body):
+        """Send an email with the attendance report using Gmail's OAuth 2.0."""
+        SCOPES=['https://www.googleapis.com/auth/gmail.send']
+
+        # If modifying the token file, delete the file to force reauthorization.
+        token_file = 'token.pickle'
+        creds = None
+        if os.path.exists(token_file):
+            with open(token_file, 'rb') as token:
+                creds = pickle.load(token)
+                # If there are no (valid) credentials available, let the user log in.
+            if not creds or not creds.valid:
+                if creds and creds.expired and creds.refresh_token:
+                    creds.refresh(Request())
+                else:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        'credentials2.json', SCOPES)
+                    creds = flow.run_local_server(port=0)
+
+                # Save the credentials for the next run
+                with open(token_file, 'wb') as token:
+                    pickle.dump(creds, token)
+
+            try:
+                service = build('gmail', 'v1', credentials=creds)
+
+                message = MIMEMultipart()
+                message['From'] = 'jihcka@gmail.com'  # Your Gmail address
+                message['To'] = professor_email
+                message['Subject'] = subject
+
+                message.attach(MIMEText(body, 'plain'))
+
+                raw_message = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
+
+                # Send the email
+                message_sent = service.users().messages().send(userId="me", body=raw_message).execute()
+                print(f"Report sent to {professor_email}, Message ID: {message_sent['id']}")
+            except Exception as e:
+                print(f"Error sending email: {e}")
+
 
     def generate_report_and_send_email(self, course_code, date):
         """Generate the report and send it to the professor's email."""
