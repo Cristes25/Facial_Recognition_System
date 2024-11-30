@@ -18,6 +18,16 @@ from database_connection import Connector
 class  AttendanceReportGenerator:
     def __init__(self):
         self.connector = Connector()
+        self.SCOPES=['https://www.googleapis.com/auth/gmail.send']
+    def get_credentials(self):
+        """
+                Get Google API credentials directly from the credentials.json file.
+                """
+        flow = InstalledAppFlow.from_client_secrets_file(
+            'credentials2.json', self.SCOPES
+        )
+        creds = flow.run_local_server(port=0)
+        return creds
 
 #Fetch data from view
     def fetch_course_schedule(self, professor_id, course_code,course_name, day_name):
@@ -72,44 +82,44 @@ class  AttendanceReportGenerator:
 """
     def send_email(self, professor_email, subject, body):
         """Send an email with the attendance report using Gmail's OAuth 2.0."""
-        SCOPES=['https://www.googleapis.com/auth/gmail.send']
+        #SCOPES=['https://www.googleapis.com/auth/gmail.send']
 
         # If modifying the token file, delete the file to force reauthorization.
-        token_file = 'token.pickle'
-        creds = None
-        if os.path.exists(token_file):
-            with open(token_file, 'rb') as token:
-                creds = pickle.load(token)
+        #token_file = 'token.pickle'
+        #creds = None
+      #  if os.path.exists(token_file):
+            #with open(token_file, 'rb') as token:
+            #    creds = pickle.load(token)
                 # If there are no (valid) credentials available, let the user log in.
-            if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
-                else:
-                    flow = InstalledAppFlow.from_client_secrets_file(
-                        'credentials2.json', SCOPES)
-                    creds = flow.run_local_server(port=0)
+            #if not creds or not creds.valid:
+                #if creds and creds.expired and creds.refresh_token:
+                   # creds.refresh(Request())
+               # else:
+                   # flow = InstalledAppFlow.from_client_secrets_file(
+                      #  'credentials2.json', SCOPES)
+                    #creds = flow.run_local_server(port=0)
 
                 # Save the credentials for the next run
-                with open(token_file, 'wb') as token:
-                    pickle.dump(creds, token)
+               # with open(token_file, 'wb') as token:
+                    #pickle.dump(creds, token)
+        creds=self.get_credentials()
+        try:
+            service = build('gmail', 'v1', credentials=creds)
 
-            try:
-                service = build('gmail', 'v1', credentials=creds)
+            message = MIMEMultipart()
+            message['From'] = 'jihcka@gmail.com'  # Your Gmail address
+            message['To'] = professor_email
+            message['Subject'] = subject
 
-                message = MIMEMultipart()
-                message['From'] = 'jihcka@gmail.com'  # Your Gmail address
-                message['To'] = professor_email
-                message['Subject'] = subject
+            message.attach(MIMEText(body, 'plain'))
 
-                message.attach(MIMEText(body, 'plain'))
+            raw_message = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
 
-                raw_message = {'raw': base64.urlsafe_b64encode(message.as_bytes()).decode()}
-
-                # Send the email
-                message_sent = service.users().messages().send(userId="me", body=raw_message).execute()
-                print(f"Report sent to {professor_email}, Message ID: {message_sent['id']}")
-            except Exception as e:
-                print(f"Error sending email: {e}")
+            # Send the email
+            message_sent = service.users().messages().send(userId="me", body=raw_message).execute()
+            print(f"Report sent to {professor_email}, Message ID: {message_sent['id']}")
+        except Exception as e:
+            print(f"Error sending email: {e}")
 
 
     def generate_report_and_send_email(self, course_code, date):
