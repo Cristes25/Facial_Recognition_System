@@ -9,6 +9,7 @@ from database_connection import Connector
 connection = Connector()
 
 def get_faces_from_db():
+    """Gets the faces with their ids from the database. Returns the ids with augmented images for better training."""
     global connection
     data = connection.get_faces_from_db()
     faces = []
@@ -31,9 +32,6 @@ def get_faces_from_db():
             # because its about the same size as the square taht forms arounds the face for detection
             face_normalized = face_resized / 255.0
             face_input = np.expand_dims(face_normalized, axis=-1)  # Add channel dimension
-
-            # cv2.imshow(student_name, face_resized)
-            # cv2.waitKey(0)
             images_batch = aumentate_data(face_input)
 
         if face_image is not None:
@@ -44,6 +42,8 @@ def get_faces_from_db():
     return faces_normalized, labels
 
 def aumentate_data(face):
+    """Flips, rotates, zooms and shears images in the database to create a batch from a single image.
+    Allows to train the model a little bit better given the lack of images"""
     aumentated_images = []
     face = np.expand_dims(face, axis=0)
     datagen = ImageDataGenerator(

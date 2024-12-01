@@ -63,8 +63,9 @@ class MyThread(QThread):
         self.camera_detector = None
 
     def run(self):
+        """Creates a new camera object. Base code provided by Medium at:
+        https://medium.com/@ilias.info.tel/display-opencv-camera-on-a-pyqt-app-4465398546f7"""
         cap = cv2.VideoCapture(0)
-
         def process_frame_callback(qt_image):
             self.frame_signal.emit(qt_image)
 
@@ -73,6 +74,7 @@ class MyThread(QThread):
             self.camera_detector.start_camera(cap)
 
     def take_photo(self):
+        """Freezes into the last frame and sends the faces captured to the main window."""
         if self.camera_detector:
             frame, faces = self.camera_detector.stop_and_capture()
             self.faces_signal.emit(faces)

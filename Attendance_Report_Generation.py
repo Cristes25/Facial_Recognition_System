@@ -20,10 +20,7 @@ class  AttendanceReportGenerator:
         self.connector = Connector()
         self.SCOPES=['https://www.googleapis.com/auth/gmail.send']
     def get_credentials(self):
-        """
-                Get Google API credentials directly from the credentials.json file.
-                """
-        path = os.getcwd()
+        """Get Google API credentials directly from the credentials.json file."""
 
         flow = InstalledAppFlow.from_client_secrets_file(
             'C:\\Users\\PC\\OneDrive - ITEDU\\Python\\project_final\\credentials2.json', self.SCOPES
@@ -49,7 +46,6 @@ class  AttendanceReportGenerator:
     def fetch_attendance_report(self, course_code, date):
         """
         Fetch attendance data for the specified course and date.
-
         """
         query = """
         SELECT 
@@ -59,51 +55,10 @@ class  AttendanceReportGenerator:
         """
         self.connector.mycursor.execute(query, (course_code, date))
         return self.connector.mycursor.fetchall()
-    """
-    def send_email(self, professor_email, subject, body):
-        Send an email with the attendance report.
-        sender_email = 'jihcka@gmail.com'
-        sender_password = 'PythonFall24'  #Creo que no es necesario
 
-        msg = MIMEMultipart()
-        msg['From'] = sender_email
-        msg['To'] = professor_email
-        msg['Subject'] = subject
-
-        msg.attach(MIMEText(body, 'plain'))
-
-        try:
-            server = smtplib.SMTP('smtp.gmail.com', 587)  # Use SMTP server for  email provider
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, professor_email, msg.as_string())
-            server.quit()
-            print(f"Report sent to {professor_email}")
-        except Exception as e:
-            print(f"Error sending email: {e}")
-"""
     def send_email(self, professor_email, subject, body):
         """Send an email with the attendance report using Gmail's OAuth 2.0."""
-        #SCOPES=['https://www.googleapis.com/auth/gmail.send']
 
-        # If modifying the token file, delete the file to force reauthorization.
-        #token_file = 'token.pickle'
-        #creds = None
-      #  if os.path.exists(token_file):
-            #with open(token_file, 'rb') as token:
-            #    creds = pickle.load(token)
-                # If there are no (valid) credentials available, let the user log in.
-            #if not creds or not creds.valid:
-                #if creds and creds.expired and creds.refresh_token:
-                   # creds.refresh(Request())
-               # else:
-                   # flow = InstalledAppFlow.from_client_secrets_file(
-                      #  'credentials2.json', SCOPES)
-                    #creds = flow.run_local_server(port=0)
-
-                # Save the credentials for the next run
-               # with open(token_file, 'wb') as token:
-                    #pickle.dump(creds, token)
         creds=self.get_credentials()
         try:
             service = build('gmail', 'v1', credentials=creds)
@@ -122,7 +77,6 @@ class  AttendanceReportGenerator:
             print(f"Report sent to {professor_email}, Message ID: {message_sent['id']}")
         except Exception as e:
             print(f"Error sending email: {e}")
-
 
     def generate_report_and_send_email(self, course_code, date):
         """Generate the report and send it to the professor's email."""
@@ -143,47 +97,12 @@ class  AttendanceReportGenerator:
         else:
             print(f"No attendance data found for course {course_code} on {date}")
 
-    #Integrate Facial Recognition
-    ############################
-        #Method to call the generate report
-
-        """
-        def mark_attendance(self, student_id, course_code, course_name,status,date):
-            #Mark attendance for the student in the given course.
-            query = 
-            
-            
-            #Verify the db values pq no me acuerdo como salian
-            self.connector.mycursor.execute(query, (student_id, course_code, date))
-            self.connector.connection_info.commit()
-            print(f"Attendance marked for student {student_id} in course {course_code} on {date}")
-        """
-
-
-        #Query to specify in which course the attendance is being marked
-        #Add group
-        #
-        def get_course_code(self, student_id, course_code,course_name,):
-            """Get the course code for the student."""
-            query = """
-            SELECT course_code, course_name 
-            FROM student_attendance_schedule 
-            WHERE student_id = %s
-            """
-            self.connector.mycursor.execute(query, (student_id,))
-            result = self.connector.mycursor.fetchone()
-            return result[0] if result else None
-
-    """def process_facial_recognition(self, recognized_faces, course_code, date):
-        #Integrate facial recognition to mark attendance.
-        for student_id in recognized_faces:
-            self.mark_attendance(student_id, course_code, date)"""
-
 
 class Attendance:
     def __init__(self):
         self.connector = Connector()
     def insert_attendance(self, student_id, schedule_id, attendance_date, status='Absent'):
+        """Inserts the present students in the attendance table in the database"""
         try:
             query="""
             INSERT INTO attendance (schedule_id,student_id,attendance_date, status)

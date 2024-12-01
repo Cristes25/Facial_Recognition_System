@@ -10,18 +10,18 @@ from FaceRecognition.image_conversion import get_faces_from_db
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 def get_training_data():
+    """Get photos an ids and encode them into classes."""
     faces_aumented, labels = get_faces_from_db()
-    print(labels)
     #The model uses numbers, so its necessary to encode the labels. There is a function label_encoder.inverse_transform that
     # decodes into the string again, to use the name. Must be the same encoder, thats why this one is sent around functions so much
     label_encoder = LabelEncoder()
     numeric_labels = label_encoder.fit_transform(labels)
     numeric_labels = tf.keras.utils.to_categorical(numeric_labels, num_classes=len(label_encoder.classes_))
     save_encoder(label_encoder)
-
     return numeric_labels, faces_aumented
 
 def save_encoder(label_encoder, file_name='label_encoder.pkl'):
+    """Store the encoder created into a pickle file for data integrity"""
     try:
         with open(file_name, 'wb') as f:
             pickle.dump(label_encoder, f)
@@ -30,6 +30,7 @@ def save_encoder(label_encoder, file_name='label_encoder.pkl'):
         print(f"Error saving LabelEncoder: {e}")
 
 def load_encoder(file_name='label_encoder.pkl'):
+    """Loads the encoder previously created"""
     try:
         with open(file_name, 'rb') as f:
             label_encoder = pickle.load(f)
@@ -40,6 +41,7 @@ def load_encoder(file_name='label_encoder.pkl'):
         return None
 
 def create_model():
+    """Create the tensorflow model for face prediction"""
     label_encoder = load_encoder()
     model = Sequential([
         tf.keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(240, 240, 1)),
@@ -66,6 +68,7 @@ def create_model():
     return model
 
 def trainer_main():
+    """Creates the model, trains it and stores into its own file for later use"""
     print("Fetching training data...")
     numeric_labels, faces_normalized = get_training_data()
 

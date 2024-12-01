@@ -1,23 +1,11 @@
 import hashlib
 import threading
 import time
-from tkinter import Label
-
 import cv2
-import e
 import numpy as np
-import json
-import os
 import tensorflow as tf
-
-from PySide6.QtCore import QThread, Signal, Slot
 from PySide6.QtGui import QImage
-from multiprocessing import Queue
-
 import pickle
-
-from charset_normalizer import detect
-
 from FaceRecognition.face_Recognition_Training import trainer_main
 
 class CameraDetector:
@@ -26,7 +14,7 @@ class CameraDetector:
         self.recognizer = None
         self.frame_processed_callback = frame_processed_callback
         self.last_emit_time = time.time()
-        self.emit_interval = 0.05
+        #self.emit_interval = 0.05
         self.running = True
         self.encoder = self.load_encoder()
         # self.face_queue = Queue(maxsize=30)
@@ -37,6 +25,7 @@ class CameraDetector:
 
 
     def stop_and_capture(self):
+        """Stop the camera, capture the last frame"""
         self.cap.release()
         cv2.destroyAllWindows()
         self.running = False
@@ -48,10 +37,8 @@ class CameraDetector:
         return None
 
     def load_encoder(self, file_name='label_encoder.pkl'):
-        '''
-        Previous function deleted. Para mandar a llamar los nombres necesita el mismo enconder con el que se codificaron
-        La creacion del encoder esta en el archivo del trainer. Antes lo pasaba como argumento entre funciones pero esta manera es mas segura
-        '''
+        """Opens the encoder created in the trainer section. The reason for this is that the encoder must be the same to
+        ensure data integrity"""
         try:
             with open(file_name, 'rb') as f:
                 label_encoder = pickle.load(f)
@@ -62,6 +49,7 @@ class CameraDetector:
             return None
 
     def convert_to_frame(self, frame):
+        """Converts the frame captured by the camera into a qtimage to display"""
         rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         h, w, ch = rgb_image.shape
         bytes_per_line = ch * w
@@ -77,29 +65,26 @@ class CameraDetector:
         arr = np.array(ptr).reshape((height, width, 3))
         return arr
 
-    def hash_face(self, face_image):
-        '''Create a unique hash for each face image based on its content.'''
-        image_hash = hashlib.md5(face_image.tobytes()).hexdigest()
-        return image_hash
+    # def hash_face(self, face_image):
+    #     """Create a unique hash for each face image based on its content."""
+    #     image_hash = hashlib.md5(face_image.tobytes()).hexdigest()
+    #     return image_hash
 
     def show_camera(self):
+        """Displays the cv camera into the qt label."""
         while self.running:
             try:
                 ret, frame = self.cap.read()
                 qt_image = self.convert_to_frame(frame)
                 self.frame_processed_callback(qt_image)
                 self.last_frame = frame
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    self.running = False
-                    self.cap.release()
-                    cv2.destroyAllWindows()
 
             except cv2.error as e:
                 print("Error", f"OpenCV error: {e}")
 
 
     def detect_all_faces_in_livemode(self, cap):
-        '''Detect students in the video stream and add them to the queue.'''
+        """Detect students in the video stream and add them to the queue."""
         try:
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             if face_cascade.empty():
@@ -149,12 +134,12 @@ class CameraDetector:
             cv2.destroyAllWindows()
 
     def detect_all_faces(self):
+        """Detects all faces present in the photo taken"""
         try:
             face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
             if face_cascade.empty():
                 print("Error: Failed to load Haar Cascade Classifier.")
                 return
-            # frame = self.qimage_to_np_array(frame)
             gray = cv2.cvtColor(self.last_frame, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, 1.1, 4, minSize=(150, 50), maxSize=(350, 350))
             for (x, y, w, h) in faces:
@@ -172,14 +157,15 @@ class CameraDetector:
 
 
     def predict_faces(self):
+        """Links the faces detected to their student id in the database using the tensorflow model"""
         present_students = []
         print("classes", self.encoder.classes_)
         for face in self.detected_faces:
             prediction = self.model.predict(face)
             predicted_label = np.argmax(prediction)
             confidence = round(float(np.max(prediction)), 2)
-            if confidence >= 0.03:
-
+            if confidence >= 0.03: # Adjust based on the model accuracy
+                # Store the name only if the confidence is high enough
                 present_students.append(predicted_label)
 
         original_ids = self.encoder.inverse_transform(present_students)
@@ -187,9 +173,9 @@ class CameraDetector:
 
 
     def predict_faces_in_livemode(self, model):
-        '''Process the students in the queue and make predictions.
+        """Process the students in the queue and make predictions.
         Uncomment self.queue, for now this is useless, since all it is doing is detecting students in a photo,
-        this is more for real time detection'''
+        this is more for real time detection"""
         while self.running:
             try:
                 if not self.face_queue.empty():
@@ -221,12 +207,15 @@ class CameraDetector:
                 print(f"Exception on predict_faces {e}")
 
     def start_camera(self, camera):
+        """Starts camera and threads the show_camera function"""
         self.cap = camera
         if self.model is None:
             return
         # Run face detection and prediction in separate threads
         camera_updating = threading.Thread(target=self.show_camera, args=())
         camera_updating.daemon = True
+
+        #Uncomment all this to try with video implementation version.
 
         # prediction = threading.Thread(target=self.predict_faces, args=(model,))
         # prediction.daemon = True

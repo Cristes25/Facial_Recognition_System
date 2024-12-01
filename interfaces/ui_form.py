@@ -97,11 +97,12 @@ class MainWindow(QMainWindow):
         self.fill_Combobox()
 
     def show_main_window(self):
-        # Show the main window again after the child window is closed
+        """Show the main window again after the child window is closed"""
         self.show()
         self.ui.report_btn.setEnabled(False)
 
     def open_attendance(self):
+        """Open the take attendance view"""
         self.hide()
         self.child_window = QWidgetCamera()
         self.child_window.show()
@@ -109,6 +110,7 @@ class MainWindow(QMainWindow):
         self.child_window.camera_thread.faces_signal.connect(lambda data: self.store_faces(data))
 
     def store_faces(self, faces):
+        """Stores the names captured in the last photo taken in open_attendance"""
         self.ui.comboBox.setEditable(False)
         self.show()
         self.ui.report_btn.setEnabled(True)
@@ -117,10 +119,12 @@ class MainWindow(QMainWindow):
             self.students.append(int(id))
 
     def fill_Combobox(self):
+        """Fills the combobox to select a class"""
         try:
+            # Comented for testing purposes, in pratice it should only show the classes happening at the moment.
             # current_day = datetime.datetime.now().strftime("%A")
             # current_time = datetime.datetime.now().strftime("%H:%M:%S")
-            current_day = 'Tuesday'
+            current_day = 'Tuesday' # Comment this and next line in real life application
             current_time = '13:00:20'
             data = (current_day, current_time, current_time)
             current_classes = self.connection.get_schedule_id(data)
@@ -130,6 +134,7 @@ class MainWindow(QMainWindow):
             print(e)
 
     def generate_report(self):
+        """Creates an Attendance object, send the list of names to the object methods."""
         attendance = Attendance()
         date = datetime.date.today()
         data = self.ui.comboBox.currentData()
